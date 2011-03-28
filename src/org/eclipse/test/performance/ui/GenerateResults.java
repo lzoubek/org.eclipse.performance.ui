@@ -184,6 +184,8 @@ public static final String GLOBAL_PAGE_NAME="global.php";
 public static final String SUMMARY_PAGE_NAME="summary.html";
 PerformanceResults performanceResults;
 
+private boolean clean;
+
 public GenerateResults() {
 }
 
@@ -443,6 +445,12 @@ private void parse(String[] args) {
 				}
 				buffer.append(" (to file: ").append(printFile).append(")\n");
 			}
+			continue;
+		}
+		if (arg.equals("-cleanup")) {
+			buffer.append("	").append(arg).append("\n");
+			this.clean = true;
+			i++;
 			continue;
 		}
 		if (arg.equals("-failure.threshold")) {
@@ -837,6 +845,16 @@ public IStatus run(PerformanceResults results, String buildName, String baseline
 	return generate(monitor);
 }
 
+public static boolean deleteRecursive(File path) throws FileNotFoundException{
+    if (!path.exists()) throw new FileNotFoundException(path.getAbsolutePath());
+    boolean ret = true;
+    if (path.isDirectory()){
+        for (File f : path.listFiles()){
+            ret = ret && deleteRecursive(f);
+        }
+    }
+    return ret && path.delete();
+}
 /*
  * Note that all necessary information to generate properly must be set before
  * calling this method
@@ -852,6 +870,16 @@ private IStatus generate(final IProgressMonitor monitor) {
 	subMonitor.setTaskName("Generate perf results for build "+this.performanceResults.getName());
 	try {
 
+		if (this.clean) {
+			if (this.printStream!=null) {
+				this.printStream.print("Clean-up output directory");
+			}
+			deleteRecursive(outputDir);
+			outputDir.mkdir();
+			if (this.printStream!=null) {
+				this.printStream.print(" .. Done");
+			}
+		}
 		// Print whole scenarios summary
 		if (this.printStream != null) this.printStream.println();
 		printSummary(/*performanceResults*/);
@@ -914,7 +942,6 @@ private IStatus generate(final IProgressMonitor monitor) {
 			}
 		}
 		*/
-
 		// Print HTML pages and all linked files
 		if (this.printStream != null) {
 			this.printStream.println("Print performance results HTML pages:");
