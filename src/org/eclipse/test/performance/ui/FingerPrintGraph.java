@@ -76,7 +76,7 @@ public class FingerPrintGraph {
 	static final int[] SUPPORTED_GRAPHS = {
 //		NO_TIME,
 		TIME_LINEAR,
-		TIME_LOG,
+//		TIME_LOG,
 	};
 
 	// Graphic fields
@@ -460,7 +460,11 @@ void drawLogarithmScale() {
 	drawScaleBackground();
 
 	// Draw scale grid lines
+
 	double max = Math.log(this.maxValue);
+	if (this.maxValue==0.0) {
+	//	max = Math.log(1000);
+	}
 	int gridValue = 100;
 	int x = MARGIN;
 	long value = 0; // TODO use minValue instead

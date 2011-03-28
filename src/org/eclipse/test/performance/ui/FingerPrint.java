@@ -57,10 +57,10 @@ public void print(final PerformanceResults performanceResults) {
 	String buildName = performanceResults.getName();
 
 	// Compute fingerprint output file name prefix
-	int currentUnderscoreIndex = buildName.indexOf('_');
-	if  (currentUnderscoreIndex != -1){
-		buildName = buildName.substring(0, currentUnderscoreIndex);
-	}
+//	int currentUnderscoreIndex = buildName.indexOf('_');
+//	if  (currentUnderscoreIndex != -1){
+//		buildName = buildName.substring(0, currentUnderscoreIndex);
+//	}
 	StringBuffer buffer = new StringBuffer("FP_");
 	if (this.component != null) {
 		buffer.append(this.component);
@@ -86,7 +86,7 @@ public void print(final PerformanceResults performanceResults) {
 	this.stream.print("    <select onChange=\"toggleFingerprints();\">\n");
 	this.stream.print("      <option>percentage</option>\n");
 	this.stream.print("      <option>time (linear)</option>\n");
-	this.stream.print("      <option>time (log)</option>\n");
+//	this.stream.print("      <option>time (log)</option>\n");
 	this.stream.print("    </select>\n");
 	this.stream.print("  </form>\n");
 	this.stream.print("</td>\n");
