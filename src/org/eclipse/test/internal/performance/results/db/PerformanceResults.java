@@ -244,6 +244,7 @@ String getConfigurationsPattern() {
 			}
 		}
 	}
+	this.configPattern="";
 	return this.configPattern;
 }
 
@@ -477,8 +478,11 @@ public String[] readAll(String buildName, String[][] configs, String pattern, Fi
 	setDefaults();
 
 	// Read local data files first
-	reset(dataDir);
-	String[] names = read(true, null, configs, true, dataDir, null, subMonitor.newChild(100));
+	String[] names = null;
+	if (dataDir!=null) {
+		reset(dataDir);
+		names = read(true, null, configs, true, dataDir, null, subMonitor.newChild(100));
+	}
 	if (names==null) {
 		// if one local files is missing then force a full DB read!
 		// TODO moderate this to force the DB read only for the missing file...
@@ -735,6 +739,7 @@ private void setDefaults() {
 
 	// Set builds if none
 	if (size() == 0 && DB_Results.DB_CONNECTION) {
+		DB_Results.setDbDefaultBaselinePrefix(this.baselinePrefix);
 		this.allBuildNames = DB_Results.getBuilds();
 		this.components = DB_Results.getComponents();
 		initConfigs();
@@ -905,7 +910,11 @@ void writeData(File dir) {
 		// otherwise contents may not be complete...
 		return;
 	}
-	if (dir ==null || (!dir.exists() && !dir.mkdirs())) {
+	if (dir==null) {
+		// dir was not defined we dont save results localy
+		return;
+	}
+	if (!dir.exists() && !dir.mkdirs()) {
 		System.err.println("can't create directory " + dir); //$NON-NLS-1$
 		return;
 	}

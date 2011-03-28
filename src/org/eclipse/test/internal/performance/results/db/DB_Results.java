@@ -124,7 +124,7 @@ public class DB_Results {
 	 */
     public static void setDbDefaultBaselinePrefix(String baselinePrefix) {
     	Assert.isNotNull(baselinePrefix);
-    	Assert.isTrue(baselinePrefix.startsWith(DEFAULT_DB_BASELINE_PREFIX));
+    	//Assert.isTrue(baselinePrefix.startsWith(DEFAULT_DB_BASELINE_PREFIX));
     	DB_BASELINE_PREFIX = baselinePrefix;
     }
 
@@ -224,7 +224,7 @@ public class DB_Results {
 	 * The default dimension used to display results (typically in fingerprints).
 	 */
 	private static Dim DEFAULT_DIM;
-	private static int DEFAULT_DIM_INDEX;
+	private static int DEFAULT_DIM_INDEX=-1;
 
 	/**
 	 * The list of all the dimensions displayed while generating results.
@@ -658,7 +658,7 @@ public static String getLastBaselineBuild(String date) {
 	String lastBaselineBuild = null;
 	for (int i=0; i<BUILDS_LENGTH; i++) {
 		String build = BUILDS[i];
-		if (build.startsWith(DB_VERSION_REF)) {
+		if (build.startsWith(getDbBaselinePrefix())) {
 			String buildDate = build.substring(build.indexOf('_')+1);
 			if (buildDate.compareTo(date) < 0) {
 				if (lastBaselineBuild == null || build.compareTo(lastBaselineBuild) > 0) {
@@ -1211,7 +1211,7 @@ private int storeBuildName(String build) {
 			}
 		}
 	} else {
-		if (LAST_CURRENT_BUILD == null || build.substring(1).compareTo(LAST_CURRENT_BUILD.substring(1)) >= 0) {
+		if (LAST_CURRENT_BUILD == null || build.substring(build.length()-12).compareTo(LAST_CURRENT_BUILD.substring(build.length()-12)) >= 0) {
 			LAST_CURRENT_BUILD = build;
 		}
 	}
