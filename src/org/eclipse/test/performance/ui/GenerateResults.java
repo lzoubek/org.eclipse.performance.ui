@@ -180,6 +180,8 @@ PrintStream printStream = null;
  */
 int failure_threshold = 10; // PerformanceTestPlugin.getDBLocation().startsWith("net://");
 
+public static final String GLOBAL_PAGE_NAME="global.php";
+public static final String SUMMARY_PAGE_NAME="summary.html";
 PerformanceResults performanceResults;
 
 public GenerateResults() {
@@ -478,15 +480,14 @@ private void parse(String[] args) {
 /*
  * Print component PHP file
  */
-private void printComponent(/*PerformanceResults performanceResults, */String component) throws FileNotFoundException {
+private void printComponent(/*PerformanceResults performanceResults, */String component, String[] components) throws FileNotFoundException {
 	if (this.printStream != null) this.printStream.print(".");
 	File outputFile = new File(this.outputDir, component + ".php");
 	PrintStream stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
-
 	// Print header
 	boolean isGlobal = component.startsWith("global");
-	if (isGlobal) {
-		File globalFile = new File(this.outputDir, "global.php");
+	if (isGlobal && components!=null) {
+		File globalFile = new File(this.outputDir, GLOBAL_PAGE_NAME);
 		PrintStream gStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(globalFile)));
 		gStream.print(Utils.HTML_OPEN);
 		gStream.print("</head>\n");
@@ -497,21 +498,15 @@ private void printComponent(/*PerformanceResults performanceResults, */String co
 		gStream.print("<table border=0 cellpadding=2 cellspacing=5 width=\"100%\">\n");
 		gStream.print("<tbody><tr> <td colspan=3 align=\"left\" bgcolor=\"#0080c0\" valign=\"top\"><b><font color=\"#ffffff\" face=\"Arial,Helvetica\">\n");
 		gStream.print("Detailed performance data grouped by scenario prefix</font></b></td></tr></tbody></table>\n");
-		gStream.print("<a href=\"org.eclipse.ant.php?\">org.eclipse.ant*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.compare.php?\">org.eclipse.compare*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.core.php?\">org.eclipse.core*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.jdt.core.php?\">org.eclipse.jdt.core*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.jdt.debug.php?\">org.eclipse.jdt.debug*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.jdt.text.php?\">org.eclipse.jdt.text*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.jdt.ui.php?\">org.eclipse.jdt.ui*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.jface.php?\">org.eclipse.jface*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.osgi.php?\">org.eclipse.osgi*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.pde.api.tools.php?\">org.eclipse.pde.api.tools*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.pde.ui.php?\">org.eclipse.pde.ui*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.swt.php?\">org.eclipse.swt*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.team.php?\">org.eclipse.team*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.ua.php?\">org.eclipse.ua*</a><br>\n");
-		gStream.print("<a href=\"org.eclipse.ui.php?\">org.eclipse.ui*</a><br><p><br><br>\n");
+		for (String comp : components) {
+			gStream.print("<a href=\""+comp+".php?\">"+comp+"*</a><br>\n");
+		}
+		gStream.print("<p><br><br>\n");
+		gStream.print("<table border=0 cellpadding=2 cellspacing=5 width=\"100%\">\n");
+		gStream.print("<tbody><tr> <td colspan=3 align=\"left\" bgcolor=\"#0080c0\" valign=\"top\"><b><font color=\"#ffffff\" face=\"Arial,Helvetica\">\n");
+		gStream.print("Summary of all tests</font></b></td></tr></tbody></table>\n");
+		gStream.print("<a href=\"summary.html\">Summary</a><br>\n");
+		gStream.print("<p><br><br>\n");
 		gStream.print("</body>\n");
 		gStream.print(Utils.HTML_CLOSE);
 		gStream.close();
@@ -569,10 +564,25 @@ private void printComponent(/*PerformanceResults performanceResults, */String co
 	stream.close();
 }
 
+private String formatBuildName(String buildName, boolean printTestDate) {
+	StringBuffer sb = new StringBuffer();
+	String[] items = buildName.split("_");
+	if (items.length<3) {
+		return buildName;
+	}
+	sb.append(items[0]);
+	String buildDate = items[1].substring(0, 8)+"-"+items[1].substring(8, items[1].length());
+	String testDate = items[2].substring(0, 8)+"-"+items[2].substring(8, items[2].length());
+	sb.append(" "+buildDate+" ");
+	if (printTestDate) sb.append("(tested "+testDate+")");
+	return sb.toString();
+}
+
 private void printComponentTitle(/*PerformanceResults performanceResults, */String component, boolean isGlobal, PrintStream stream) {
 	String baselineName = this.performanceResults.getBaselineName();
 	String currentName = this.performanceResults.getName();
-
+	baselineName = formatBuildName(baselineName,true);
+	currentName = formatBuildName(currentName,false);
 	// Print title line
 	stream.print("<h3>Performance of ");
 	if (!isGlobal) {
@@ -581,17 +591,9 @@ private void printComponentTitle(/*PerformanceResults performanceResults, */Stri
 	}
 	stream.print(currentName);
 	stream.print(" relative to ");
-	int index = baselineName.indexOf('_');
-	if (index > 0) {
-		stream.print(baselineName.substring(0, index));
-		stream.print(" (");
-		index = baselineName.lastIndexOf('_');
-		stream.print(baselineName.substring(index+1, baselineName.length()));
-		stream.print(')');
-	} else {
-		stream.print(baselineName);
-	}
-		stream.print("</h3>\n");
+	stream.print(baselineName);
+
+	stream.print("</h3>\n");
 
 	// Print reference to global results
 	if (!isGlobal) {
@@ -600,7 +602,7 @@ private void printComponentTitle(/*PerformanceResults performanceResults, */Stri
 		stream.print("	if ($type==\"\") {\n");
 		stream.print("		$type=\"fp_type=0\";\n");
 		stream.print("	}\n");
-		stream.print("	$href=\"<a href=\\\"performance.php?\";\n");
+		stream.print("	$href=\"<a href=\\\""+GLOBAL_PAGE_NAME+"?\";\n");
 		stream.print("	$href=$href . $type . \"\\\">Back to global results</a><br><br>\";\n");
 		stream.print("	echo $href;\n");
 		stream.print("?>\n");
@@ -614,7 +616,7 @@ private void printComponentTitle(/*PerformanceResults performanceResults, */Stri
 private void printSummary(/*PerformanceResults performanceResults*/) {
 	long start = System.currentTimeMillis();
 	if (this.printStream != null) this.printStream.print("Print scenarios variations summary...");
-	File outputFile = new File(this.outputDir, "cvsummary.html");
+	File outputFile = new File(this.outputDir, SUMMARY_PAGE_NAME);
 	PrintStream stream = null;
 	try {
 		stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
@@ -665,6 +667,7 @@ private void printSummaryPresentation(PrintStream stream) {
 	stream.print(Utils.HTML_DEFAULT_CSS);
 	stream.print("<title>Summary of Elapsed Process Variation Coefficients</title></head>\n");
 	stream.print("<body><h3>Summary of Elapsed Process Variation Coefficients</h3>\n");
+	stream.print("<p><a href=\""+GLOBAL_PAGE_NAME+"\">Back to global results</a></p>");
 	stream.print("<p> This table provides a bird's eye view of variability in elapsed process times\n");
 	stream.print("for baseline and current build stream performance scenarios.");
 	stream.print(" This summary is provided to facilitate the identification of scenarios that should be examined due to high variability.");
@@ -918,13 +921,15 @@ private IStatus generate(final IProgressMonitor monitor) {
 			this.printStream.print("	- components main page");
 		}
 		long start = System.currentTimeMillis();
+		String[] components = this.performanceResults.getComponents();
+		Arrays.sort(components);
 //		subMonitor.setTaskName("Write fingerprints: 0%");
 //		subMonitor.subTask("Global...");
 		subMonitor.subTask("Write fingerprints: global (0%)...");
-		printComponent(/*performanceResults, */"global_fp");
+		printComponent(/*performanceResults, */"global_fp",components);
 		subMonitor.worked(100);
 		if (subMonitor.isCanceled()) throw new OperationCanceledException();
-		String[] components = this.performanceResults.getComponents();
+		
 		int length = components.length;
 		int step = 1000 / length;
 		int progress = 0;
@@ -933,7 +938,7 @@ private IStatus generate(final IProgressMonitor monitor) {
 //			subMonitor.setTaskName("Write fingerprints: "+percentage+"%");
 //			subMonitor.subTask(components[i]+"...");
 			subMonitor.subTask("Write fingerprints: "+components[i]+" ("+percentage+"%)...");
-			printComponent(/*performanceResults, */components[i]);
+			printComponent(/*performanceResults, */components[i],null);
 			subMonitor.worked(step);
 			if (subMonitor.isCanceled()) throw new OperationCanceledException();
 			progress++;
