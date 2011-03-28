@@ -326,9 +326,10 @@ public static String getBuildDate(String buildName, String baselinePrefix) {
 
 	// Try with date format
 	int length = buildName.length() - 12 /* length of date */;
+	
 	for (int i=0; i<=length; i++) {
 		try {
-			String substring = i == 0 ? buildName : buildName.substring(i);
+			String substring = i == 0 ? buildName : buildName.substring(i,i+12);
 			Util.DATE_FORMAT.parse(substring);
 			return substring; // if no exception is raised then the substring has a correct date format => return it
 		} catch(ParseException ex) {
