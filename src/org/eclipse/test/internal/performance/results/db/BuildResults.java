@@ -471,7 +471,17 @@ void setValue(int dim_id, int step, long value) {
 			// when several measures are made for the same build
 			this.average[i] = IMPOSSIBLE_VALUE;
 		}
-	} else {
+	}
+	if (this.dimensions.length<length) {
+		System.arraycopy(this.dimensions, 0, this.dimensions = new Dim[length], 0, length-1);
+		this.dimensions[length-1]=dimension;
+		System.arraycopy(this.average, 0, this.average = new double[length], 0, length-1);
+		this.average[length-1]=IMPOSSIBLE_VALUE;
+		System.arraycopy(this.average, 0, this.average = new double[length], 0, length-1);
+		System.arraycopy(this.stddev, 0, this.stddev = new double[length], 0, length-1);
+		System.arraycopy(this.count, 0, this.count = new long[length], 0, length-1);
+	}
+	if (this.dimensions!=null) {
 		length = this.dimensions.length;
 		for (int i=0; i<length; i++) {
 			if (this.dimensions[i] == null) {
@@ -488,13 +498,21 @@ void setValue(int dim_id, int step, long value) {
 	switch (step) {
 		case InternalPerformanceMeter.AVERAGE:
 			if (this.average[idx] != IMPOSSIBLE_VALUE) {
+				
 				if (this.values == null) {
 					this.values = new double[length][];
-					this.values[idx] = new double[2];
+					for (int i = 0;i<this.values.length;i++) {
+						this.values[i] = new double[2];
+					}
 					this.values[idx][0] = this.average[idx];
 					this.values[idx][1] = value;
 					this.average[idx] = IMPOSSIBLE_VALUE;
-				} else if (this.values[idx] == null) {
+				} else if (this.values.length<length) {
+					System.arraycopy(this.values, 0, this.values = new double[length][], 0, length-1);
+					
+				}
+					
+					if (this.values[idx] == null) {
 					this.values[idx] = new double[2];
 					this.values[idx][0] = this.average[idx];
 					this.values[idx][1] = value;
